@@ -42,21 +42,38 @@ function App() {
       const program = initShaders(gl, vshader, fshader);
       setProgram(program);
       aPosition.current = gl.getAttribLocation(program, 'a_position');
-    }
-  }, [gl]);
 
-  useEffect(() => {
-    if (!gl) {
-      return;
-    }
-    gl.clearColor(0, 0, 0, 1);
-    gl.clear(gl.COLOR_BUFFER_BIT);
-    for (let i = 0; i < positions.length; i++) {
-      gl.vertexAttrib3f(aPosition.current, positions[i][0], positions[i][1], 0);
-      gl.drawArrays(gl.POINTS, 0, 1);
+      gl.clearColor(0, 0, 0, 1);
+      gl.clear(gl.COLOR_BUFFER_BIT);
+      const size = initVertexBuffers(gl, program);
+      if (size < 0) {
+        return;
+      }
+      gl.drawArrays(gl.TRIANGLES, 0, size);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [positions]);
+  }, [gl]);
+
+  function initVertexBuffers(gl: WebGLRenderingContext, program: WebGLProgram) {
+    if (!program) {
+      return -1;
+    }
+    const vertexBuffer = gl.createBuffer();
+    if (!vertexBuffer) {
+      return -1;
+    }
+    const vertices = [0.0, 0.5, -0.5, -0.5, 0.5, -0.5];
+    const size = vertices.length / 2;
+    gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+    const aPosition = gl.getAttribLocation(program, 'a_position');
+    if (aPosition < 0) {
+      return -1;
+    }
+    gl.vertexAttribPointer(aPosition, 2, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(aPosition);
+    return size;
+  }
 
   return (
     <div className="App">
